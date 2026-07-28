@@ -21,18 +21,18 @@ describe("Next.makeWithRuntime", () => {
     { provides: Other, failure: Schema.String }
   ) {}
 
-  const AuthLive: Layer.Layer<AuthMiddleware> = Layer.succeed(
+  const layerAuth: Layer.Layer<AuthMiddleware> = Layer.succeed(
     AuthMiddleware,
     AuthMiddleware.of(() => Effect.succeed({ id: "123", name: "John Doe" }))
   )
-  const OtherLive: Layer.Layer<OtherMiddleware> = Layer.succeed(
+  const layerOther: Layer.Layer<OtherMiddleware> = Layer.succeed(
     OtherMiddleware,
     OtherMiddleware.of(() => Effect.succeed({ id: "456", name: "Jane Doe" }))
   )
 
   it.effect("allows middleware when using a ManagedRuntime", () =>
     Effect.gen(function*() {
-      const combined = Layer.mergeAll(AuthLive, OtherLive)
+      const combined = Layer.mergeAll(layerAuth, layerOther)
       const runtime = ManagedRuntime.make(combined)
 
       const page = Next.makeWithRuntime("BaseRuntime", runtime)

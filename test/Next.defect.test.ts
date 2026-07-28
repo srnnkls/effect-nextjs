@@ -40,7 +40,7 @@ describe("Next defects", () => {
         "DefectMiddleware"
       ) {}
 
-      const DefectLive: Layer.Layer<DefectMiddleware> = Layer.succeed(
+      const layerDefect: Layer.Layer<DefectMiddleware> = Layer.succeed(
         DefectMiddleware,
         // Defer throwing to inside Effect to be caught/logged
         () =>
@@ -49,7 +49,7 @@ describe("Next defects", () => {
           })
       )
 
-      const app = Layer.mergeAll(Layer.succeed(Dummy, {}), DefectLive)
+      const app = Layer.mergeAll(Layer.succeed(Dummy, {}), layerDefect)
 
       const page = Next.make("Base", app)
         .middleware(DefectMiddleware)

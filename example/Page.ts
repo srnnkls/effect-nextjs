@@ -13,7 +13,7 @@ export class ProvideUser extends NextMiddleware.Tag<ProvideUser>()(
   { provides: CurrentUser, failure: Schema.String }
 ) {}
 
-const ProvideUserLive = Layer.succeed(
+const layerProvideUser = Layer.succeed(
   ProvideUser,
   () => Effect.succeed({ id: "u-1", name: "Alice" })
 )
@@ -27,7 +27,7 @@ export class CatchAll extends NextMiddleware.Tag<CatchAll>()(
   }
 ) {}
 
-const CatchAllLive = Layer.succeed(
+const layerCatchAll = Layer.succeed(
   CatchAll,
   CatchAll.of(({ next }) =>
     Effect.gen(function*() {
@@ -36,7 +36,7 @@ const CatchAllLive = Layer.succeed(
   )
 )
 
-const app = Layer.mergeAll(CatchAllLive, ProvideUserLive)
+const app = Layer.mergeAll(layerCatchAll, layerProvideUser)
 
 const BasePage = Next.make("Home", app)
 

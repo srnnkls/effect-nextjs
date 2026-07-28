@@ -47,8 +47,8 @@ pnpx create-next-app@latest
 import { Next } from "@mcrovero/effect-nextjs"
 import { Layer } from "effect"
 
-const AppLive = Layer.empty // Your stateless layers
-export const BasePage = Next.make("BasePage", AppLive)
+const layerApp = Layer.empty // Your stateless layers
+export const BasePage = Next.make("BasePage", layerApp)
 ```
 
 > [!WARNING]
@@ -87,14 +87,13 @@ export class AuthMiddleware extends NextMiddleware.Tag<AuthMiddleware>()("AuthMi
   failure: Schema.String
 }) {}
 
-// Live implementation for the middleware
-export const AuthLive = Layer.succeed(
+export const layerAuth = Layer.succeed(
   AuthMiddleware,
   AuthMiddleware.of(() => Effect.succeed({ id: "123", name: "Ada" }))
 )
 
 // Create a typed page handler
-export const AuthenticatedPage = Next.make("BasePage", AuthLive).middleware(AuthMiddleware)
+export const AuthenticatedPage = Next.make("BasePage", layerAuth).middleware(AuthMiddleware)
 ```
 
 5. Use the middleware in a page and get the CurrentUser value
@@ -240,7 +239,7 @@ export class Wrapped extends NextMiddleware.Tag<Wrapped>()("Wrapped", {
   wrap: true
 }) {}
 
-const WrappedLive = Layer.succeed(
+const layerWrapped = Layer.succeed(
   Wrapped,
   Wrapped.of(({ next }) =>
     Effect.gen(function* () {
@@ -254,8 +253,8 @@ const WrappedLive = Layer.succeed(
   )
 )
 
-const AppLive = Layer.mergeAll(WrappedLive)
-const Page = Next.make("Home", AppLive).middleware(Wrapped)
+const layerApp = Layer.mergeAll(layerWrapped)
+const Page = Next.make("Home", layerApp).middleware(Wrapped)
 ```
 
 ### Stateful layers
@@ -322,7 +321,7 @@ const BlogPage = Effect.fn("BlogHandler")(function* (props: PageProps<"/blog/[sl
   )
 })
 
-export default Next.make("BlogPage", AppLive).build(BlogPage)
+export default Next.make("BlogPage", layerApp).build(BlogPage)
 
 // Layout with parallel routes support
 const DashboardLayout = Effect.fn("DashboardLayout")(function* (props: LayoutProps<"/dashboard">) {
@@ -335,7 +334,7 @@ const DashboardLayout = Effect.fn("DashboardLayout")(function* (props: LayoutPro
     </div>
   )
 })
-export default Next.make("DashboardLayout", AppLive).build(DashboardLayout)
+export default Next.make("DashboardLayout", layerApp).build(DashboardLayout)
 ```
 
 See the official documentation: - [Next.js 15.5 – Route Props Helpers](https://nextjs.org/docs/app/getting-started/layouts-and-pages#route-props-helpers)
@@ -374,9 +373,9 @@ export const layerTracer = OtelTracer.layerGlobal.pipe(
 and provide it to the Next runtime
 
 ```ts
-export const AppLiveWithTracer = AppLive.pipe(Layer.provideMerge(layerTracer))
+export const layerAppWithTracer = layerApp.pipe(Layer.provideMerge(layerTracer))
 ```
 
 ```ts
-export const BasePage = Next.make("BasePage", AppLiveWithTracer)
+export const BasePage = Next.make("BasePage", layerAppWithTracer)
 ```

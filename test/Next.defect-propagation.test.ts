@@ -17,13 +17,13 @@ describe("Wrapper defect propagation", () => {
         catches: Schema.String
       }) {}
 
-      const CatcherLive: Layer.Layer<Catcher> = Layer.succeed(
+      const layerCatcher: Layer.Layer<Catcher> = Layer.succeed(
         Catcher,
         // Even if we try to catch failures from `next`, defects must escape untouched
         Catcher.of(({ next }) => next.pipe(Effect.catch(() => Effect.succeed("caught" as const))))
       )
 
-      const page = Next.make("WrapperDefect", CatcherLive).middleware(Catcher)
+      const page = Next.make("WrapperDefect", layerCatcher).middleware(Catcher)
 
       const result = yield* Effect.tryPromise({
         try: () =>
@@ -50,12 +50,12 @@ describe("Wrapper defect propagation", () => {
         catches: Schema.String
       }) {}
 
-      const CatcherLive: Layer.Layer<Catcher> = Layer.succeed(
+      const layerCatcher: Layer.Layer<Catcher> = Layer.succeed(
         Catcher,
         Catcher.of(({ next }) => next.pipe(Effect.catch(() => Effect.succeed("caught" as const))))
       )
 
-      const page = Next.make("WrapperDefectRedirect", CatcherLive).middleware(Catcher)
+      const page = Next.make("WrapperDefectRedirect", layerCatcher).middleware(Catcher)
 
       // Create a redirect control-flow error instance without throwing (so we can assert identity)
       const redirectError = getRedirectError("/somewhere", RedirectType.replace) as Error

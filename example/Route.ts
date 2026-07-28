@@ -11,7 +11,7 @@ export class TimeMiddleware extends NextMiddleware.Tag<TimeMiddleware>()(
   { provides: ServerTime }
 ) {}
 
-const TimeLive = Layer.succeed(
+const layerTime = Layer.succeed(
   TimeMiddleware,
   TimeMiddleware.of(() => Effect.succeed({ now: Date.now() }))
 )
@@ -23,6 +23,6 @@ const _GET = Effect.fn("ServerTimeRoute")(function*() {
   return { server }
 })
 
-export const GET = Next.make("Base", TimeLive)
+export const GET = Next.make("Base", layerTime)
   .middleware(TimeMiddleware)
   .build(_GET)

@@ -12,7 +12,7 @@ export class ThemeMiddleware extends NextMiddleware.Tag<ThemeMiddleware>()(
   { provides: Theme, failure: Schema.String }
 ) {}
 
-const ThemeLive = Layer.succeed(
+const layerTheme = Layer.succeed(
   ThemeMiddleware,
   ThemeMiddleware.of(() => Effect.succeed({ mode: "dark" }))
 )
@@ -26,7 +26,7 @@ export class CatchAll extends NextMiddleware.Tag<CatchAll>()(
   }
 ) {}
 
-const CatchAllLive = Layer.succeed(
+const layerCatchAll = Layer.succeed(
   CatchAll,
   CatchAll.of(({ next }) =>
     Effect.gen(function*() {
@@ -35,7 +35,7 @@ const CatchAllLive = Layer.succeed(
   )
 )
 
-const app = Layer.mergeAll(CatchAllLive, ThemeLive)
+const app = Layer.mergeAll(layerCatchAll, layerTheme)
 
 const BaseLayout = Next.make("Root", app)
   .middleware(ThemeMiddleware)

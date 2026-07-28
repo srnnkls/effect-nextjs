@@ -19,7 +19,7 @@ describe("Next", () => {
     { provides: Obj, failure: Schema.String }
   ) {}
 
-  const MiddlewareFastLive: Layer.Layer<MiddlewareFast> = Layer.succeed(
+  const layerMiddlewareFast: Layer.Layer<MiddlewareFast> = Layer.succeed(
     MiddlewareFast,
     MiddlewareFast.of(() =>
       Effect.log("MiddlewareFast").pipe(
@@ -29,7 +29,7 @@ describe("Next", () => {
       )
     )
   )
-  const MiddlewareSlowLive: Layer.Layer<MiddlewareSlow> = Layer.succeed(
+  const layerMiddlewareSlow: Layer.Layer<MiddlewareSlow> = Layer.succeed(
     MiddlewareSlow,
     MiddlewareSlow.of(() =>
       Effect.log("MiddlewareSlow").pipe(
@@ -42,7 +42,7 @@ describe("Next", () => {
 
   it.effect("The provided service implementation at request time should be isolated", () =>
     Effect.gen(function*() {
-      const combined = Layer.mergeAll(MiddlewareFastLive, MiddlewareSlowLive)
+      const combined = Layer.mergeAll(layerMiddlewareFast, layerMiddlewareSlow)
       const pageSlow = Next.make("Base", combined)
         .middleware(MiddlewareSlow).build(() => Obj)
 

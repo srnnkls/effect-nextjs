@@ -10,7 +10,9 @@ export class CurrentUser extends Context.Service<CurrentUser, User>()("showcase/
 
 export class Clock extends Context.Service<Clock, { readonly startedAt: DateTime.Utc }>()("showcase/Clock", {
   make: Effect.map(DateTime.now, (startedAt) => ({ startedAt }))
-}) {}
+}) {
+  static readonly layer = Layer.effect(this, this.make)
+}
 
 export class RequestIdMiddleware extends NextMiddleware.Tag<RequestIdMiddleware>()(
   "showcase/RequestIdMiddleware",
@@ -31,7 +33,7 @@ export class TimingMiddleware extends NextMiddleware.Tag<TimingMiddleware>()(
   }
 ) {}
 
-const RequestIdLive = Layer.succeed(
+export const layerRequestId = Layer.succeed(
   RequestIdMiddleware,
   RequestIdMiddleware.of(() =>
     Effect.gen(function*() {
@@ -42,7 +44,7 @@ const RequestIdLive = Layer.succeed(
   )
 )
 
-const AuthLive = Layer.succeed(
+export const layerAuth = Layer.succeed(
   AuthMiddleware,
   AuthMiddleware.of(() =>
     Effect.gen(function*() {
@@ -57,7 +59,7 @@ const AuthLive = Layer.succeed(
   )
 )
 
-const TimingLive = Layer.succeed(
+export const layerTiming = Layer.succeed(
   TimingMiddleware,
   TimingMiddleware.of(({ next }) =>
     Effect.gen(function*() {
@@ -71,21 +73,21 @@ const TimingLive = Layer.succeed(
   )
 )
 
-const AppLive = Layer.mergeAll(RequestIdLive, AuthLive, TimingLive)
+export const layerApp = Layer.mergeAll(layerRequestId, layerAuth, layerTiming)
 
-export const BasePage = Next.make("showcase/BasePage", AppLive)
+export const BasePage = Next.make("showcase/BasePage", layerApp)
   .middleware(RequestIdMiddleware)
   .middleware(TimingMiddleware)
 
 export const AuthedPage = BasePage.middleware(AuthMiddleware)
 
-export const BaseRoute = Next.make("showcase/BaseRoute", AppLive)
+export const BaseRoute = Next.make("showcase/BaseRoute", layerApp)
   .middleware(RequestIdMiddleware)
 
 const clockKey = Symbol.for("showcase/clockRuntime")
 
 const clockRuntime = ((globalThis as Record<symbol, unknown>)[clockKey] ??= ManagedRuntime.make(
-  Layer.effect(Clock, Clock.make)
+  Clock.layer
 )) as ManagedRuntime.ManagedRuntime<Clock, never>
 
 export const UptimePage = Next.makeWithRuntime("showcase/UptimePage", clockRuntime)

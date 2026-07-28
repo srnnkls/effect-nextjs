@@ -12,7 +12,7 @@ export class RequestIdMiddleware extends NextMiddleware.Tag<RequestIdMiddleware>
   { provides: RequestId }
 ) {}
 
-const RequestIdLive = Layer.succeed(
+const layerRequestId = Layer.succeed(
   RequestIdMiddleware,
   RequestIdMiddleware.of(() =>
     Effect.gen(function*() {
@@ -22,7 +22,7 @@ const RequestIdLive = Layer.succeed(
   )
 )
 
-const AppLive = Layer.mergeAll(RequestIdLive)
+const layerApp = Layer.mergeAll(layerRequestId)
 
-export const BasePage = Next.make("fixtures/next-app/BasePage", AppLive)
-export const BaseRoute = Next.make("fixtures/next-app/BaseRoute", AppLive)
+export const BasePage = Next.make("fixtures/next-app/BasePage", layerApp)
+export const BaseRoute = Next.make("fixtures/next-app/BaseRoute", layerApp)

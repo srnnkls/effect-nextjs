@@ -16,7 +16,7 @@ describe("Next", () => {
 
   let executed = 0
 
-  const MiddlewareFastLive: Layer.Layer<MiddlewareFast> = Layer.succeed(
+  const layerMiddlewareFast: Layer.Layer<MiddlewareFast> = Layer.succeed(
     MiddlewareFast,
     MiddlewareFast.of(() =>
       Effect.log("MiddlewareFast").pipe(
@@ -33,7 +33,7 @@ describe("Next", () => {
 
   it.effect("The middleware effect should be executed even if the handler does not yield it", () =>
     Effect.gen(function*() {
-      const combined = Layer.mergeAll(MiddlewareFastLive)
+      const combined = Layer.mergeAll(layerMiddlewareFast)
       const pageFast = Next.make("Base", combined)
         .middleware(MiddlewareFast)
         .build(() => Effect.succeed("ok"))

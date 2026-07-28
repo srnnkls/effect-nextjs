@@ -20,7 +20,7 @@ export class AuthMiddleware extends NextMiddleware.Tag<AuthMiddleware>()(
 ) {}
 
 // Implementation for non-wrapped middleware: compute value to provide
-const _AuthLive = Layer.effect(
+const layerAuth = Layer.effect(
   AuthMiddleware,
   Effect.gen(function*() {
     const other = yield* Other
@@ -32,7 +32,7 @@ const _AuthLive = Layer.effect(
   })
 )
 
-const ProdLive = Layer.mergeAll(_AuthLive.pipe(Layer.provide(Layer.succeed(Other, { id: "999", name: "Jane" }))))
+const layerApp = Layer.mergeAll(layerAuth.pipe(Layer.provide(Layer.succeed(Other, { id: "999", name: "Jane" }))))
 
 // In page.tsx
 
@@ -43,7 +43,7 @@ const Page = ({ params }: { params: Promise<{ id: string }> }) =>
     return { user, params }
   }).pipe(Effect.catch((e) => Effect.succeed({ error: e })))
 
-export default Next.make("Base", ProdLive)
+export default Next.make("Base", layerApp)
   .middleware(AuthMiddleware)
   .build(
     Page

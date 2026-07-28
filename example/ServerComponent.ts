@@ -11,7 +11,7 @@ export class TimeMiddleware extends NextMiddleware.Tag<TimeMiddleware>()(
   { provides: ServerTime }
 ) {}
 
-const TimeLive = Layer.succeed(
+const layerTime = Layer.succeed(
   TimeMiddleware,
   TimeMiddleware.of(() => Effect.succeed({ now: Date.now() }))
 )
@@ -23,6 +23,6 @@ const _ServerComponent = Effect.fn("ServerComponent")(function*({ time }: { time
   return { time: { ...time, now: server.now + 1000 } }
 })
 
-export default Next.make("Base", TimeLive)
+export default Next.make("Base", layerTime)
   .middleware(TimeMiddleware)
   .build(_ServerComponent)

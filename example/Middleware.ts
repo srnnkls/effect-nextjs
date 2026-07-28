@@ -28,7 +28,7 @@ export class NotWrappedMiddleware extends NextMiddleware.Tag<NotWrappedMiddlewar
 ) {}
 
 // Implementation for wrapped middleware: decide when to run next and inject value
-const _WrappedLive = Layer.succeed(
+const layerWrapped = Layer.succeed(
   WrappedMiddleware,
   WrappedMiddleware.of(({ next }) =>
     Effect.gen(function*() {
@@ -38,12 +38,12 @@ const _WrappedLive = Layer.succeed(
 )
 
 // Implementation for non-wrapped middleware: compute value to provide
-const _NotWrappedLive = Layer.succeed(
+const layerNotWrapped = Layer.succeed(
   NotWrappedMiddleware,
   NotWrappedMiddleware.of(() => Effect.succeed({ id: "123", name: "other" }))
 )
 
-const ProdLive = Layer.mergeAll(_WrappedLive, _NotWrappedLive)
+const layerApp = Layer.mergeAll(layerWrapped, layerNotWrapped)
 
 // In page.tsx
 
@@ -54,7 +54,7 @@ const Page = ({ params }: { params: Promise<{ id: string }> }) =>
     return { user, params }
   }).pipe(Effect.catch((e) => Effect.succeed({ error: e })))
 
-export default Next.make("Base", ProdLive)
+export default Next.make("Base", layerApp)
   .middleware(WrappedMiddleware)
   .middleware(NotWrappedMiddleware)
   .build(

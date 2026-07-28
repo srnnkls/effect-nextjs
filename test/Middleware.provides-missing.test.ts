@@ -16,13 +16,13 @@ describe("Middleware provides missing", () => {
         { provides: CurrentUser, failure: Schema.String }
       ) {}
 
-      const AuthLive: Layer.Layer<AuthMiddleware> = Layer.succeed(
+      const layerAuth: Layer.Layer<AuthMiddleware> = Layer.succeed(
         AuthMiddleware,
         AuthMiddleware.of(() => Effect.succeed({ id: "1", name: "Ada" }))
       )
 
       // Provide the middleware implementation in the Layer, but DO NOT add it to the chain
-      const page = Next.make("Base", Layer.mergeAll(AuthLive))
+      const page = Next.make("Base", Layer.mergeAll(layerAuth))
 
       const result = yield* Effect.tryPromise({
         try: () =>

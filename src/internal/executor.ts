@@ -1,4 +1,4 @@
-import { Cause, Chunk, Effect, Exit } from "effect"
+import { Cause, Effect, Exit } from "effect"
 import type * as ManagedRuntime from "effect/ManagedRuntime"
 import { unstable_rethrow } from "next/dist/client/components/unstable-rethrow.server.js"
 
@@ -15,7 +15,7 @@ export const executeWithRuntime = async <A>(
     : await Effect.runPromiseExit(effect)
 
   if (Exit.isFailure(result)) {
-    const defects = Chunk.toArray(Cause.defects(result.cause))
+    const defects = result.cause.reasons.filter(Cause.isDieReason).map((reason) => reason.defect)
     if (defects.length === 1) {
       unstable_rethrow(defects[0])
     }

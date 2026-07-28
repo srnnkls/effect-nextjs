@@ -20,12 +20,12 @@ describe("Wrapper defect propagation", () => {
       const CatcherLive: Layer.Layer<Catcher> = Layer.succeed(
         Catcher,
         // Even if we try to catch failures from `next`, defects must escape untouched
-        Catcher.of(({ next }) => next.pipe(Effect.catchAll(() => Effect.succeed("caught" as const))))
+        Catcher.of(({ next }) => next.pipe(Effect.catch(() => Effect.succeed("caught" as const))))
       )
 
       const page = Next.make("WrapperDefect", CatcherLive).middleware(Catcher)
 
-      const either = yield* Effect.tryPromise({
+      const result = yield* Effect.tryPromise({
         try: () =>
           page.build(() =>
             Effect.sync(() => {
@@ -33,13 +33,13 @@ describe("Wrapper defect propagation", () => {
             })
           )(),
         catch: (e) => e as Error
-      }).pipe(Effect.either)
+      }).pipe(Effect.result)
 
-      if (either._tag === "Right") {
+      if (result._tag === "Success") {
         assert.fail("Expected notFound error to escape as rejection")
       } else {
         // Must be the exact same instance that was thrown
-        assert.match((either.left as Error).message, /NEXT_HTTP_ERROR_FALLBACK;404/)
+        assert.match((result.failure as Error).message, /NEXT_HTTP_ERROR_FALLBACK;404/)
       }
     }))
 
@@ -52,7 +52,7 @@ describe("Wrapper defect propagation", () => {
 
       const CatcherLive: Layer.Layer<Catcher> = Layer.succeed(
         Catcher,
-        Catcher.of(({ next }) => next.pipe(Effect.catchAll(() => Effect.succeed("caught" as const))))
+        Catcher.of(({ next }) => next.pipe(Effect.catch(() => Effect.succeed("caught" as const))))
       )
 
       const page = Next.make("WrapperDefectRedirect", CatcherLive).middleware(Catcher)
@@ -60,7 +60,7 @@ describe("Wrapper defect propagation", () => {
       // Create a redirect control-flow error instance without throwing (so we can assert identity)
       const redirectError = getRedirectError("/somewhere", RedirectType.replace) as Error
 
-      const either = yield* Effect.tryPromise({
+      const result = yield* Effect.tryPromise({
         try: () =>
           page.build(() =>
             Effect.sync(() => {
@@ -68,14 +68,14 @@ describe("Wrapper defect propagation", () => {
             })
           )(),
         catch: (e) => e as Error
-      }).pipe(Effect.either)
+      }).pipe(Effect.result)
 
-      if (either._tag === "Right") {
+      if (result._tag === "Success") {
         assert.fail("Expected redirect error to escape as rejection")
       } else {
         // Must be the exact same instance that was thrown
-        assert.ok(either.left === redirectError)
-        assert.match((either.left as Error).message, /NEXT_REDIRECT/)
+        assert.ok(result.failure === redirectError)
+        assert.match((result.failure as Error).message, /NEXT_REDIRECT/)
       }
     }))
 })

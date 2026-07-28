@@ -8,17 +8,17 @@ describe("Next interruption", () => {
     Effect.gen(function*() {
       const page = Next.make("Interrupt", Layer.empty)
 
-      const either = yield* Effect.tryPromise({
+      const result = yield* Effect.tryPromise({
         try: () => page.build(() => Effect.interrupt)(),
         catch: (error) => error
-      }).pipe(Effect.either)
+      }).pipe(Effect.result)
 
-      if (either._tag === "Right") {
+      if (result._tag === "Success") {
         assert.fail("Expected interrupt to reject")
       } else {
-        assert.notStrictEqual(either.left, undefined)
-        assert.ok(either.left instanceof Error)
-        assert.match(String(either.left), /Interrupted/)
+        assert.notStrictEqual(result.failure, undefined)
+        assert.ok(result.failure instanceof Error)
+        assert.match(String(result.failure), /Interrupt/)
       }
     }))
 })

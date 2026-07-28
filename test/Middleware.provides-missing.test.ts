@@ -9,7 +9,7 @@ import * as NextMiddleware from "../src/NextMiddleware.js"
 describe("Middleware provides missing", () => {
   it.effect("accessing provided Tag without adding middleware fails", () =>
     Effect.gen(function*() {
-      class CurrentUser extends Context.Tag("CurrentUser")<CurrentUser, { id: string; name: string }>() {}
+      class CurrentUser extends Context.Service<CurrentUser, { id: string; name: string }>()("CurrentUser") {}
 
       class AuthMiddleware extends NextMiddleware.Tag<AuthMiddleware>()(
         "AuthMiddleware",
@@ -24,7 +24,7 @@ describe("Middleware provides missing", () => {
       // Provide the middleware implementation in the Layer, but DO NOT add it to the chain
       const page = Next.make("Base", Layer.mergeAll(AuthLive))
 
-      const either = yield* Effect.tryPromise({
+      const result = yield* Effect.tryPromise({
         try: () =>
           page.build(() =>
             // @ts-expect-error accessing CurrentUser without adding AuthMiddleware must be a type error
@@ -35,13 +35,13 @@ describe("Middleware provides missing", () => {
             })
           )(),
         catch: (e) => e as Error
-      }).pipe(Effect.either)
+      }).pipe(Effect.result)
 
-      if (either._tag === "Right") {
+      if (result._tag === "Success") {
         assert.fail("Expected missing service error, got success")
       } else {
         // Message should indicate the missing service; check for tag key
-        const msg = String(either.left)
+        const msg = String(result.failure)
         assert.ok(/CurrentUser/.test(msg), `Expected error mentioning CurrentUser, got: ${msg}`)
       }
     }))

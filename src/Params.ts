@@ -8,26 +8,30 @@ type NextBaseParams = Promise<
  * @since 0.30.0
  * @category params
  */
-export const decodeParamsUnknown = <T, P extends NextBaseParams>(schema: Schema.Schema<T, any>) => (params: P) =>
-  Effect.promise(() => params).pipe(
-    Effect.flatMap(Schema.decodeUnknown(schema))
-  )
-
-/**
- * @since 0.30.0
- * @category params
- */
-export const decodeSearchParamsUnknown =
-  <T, P extends NextBaseParams>(schema: Schema.Schema<T, any>) => (searchParams: P) =>
-    Effect.promise(() => searchParams).pipe(
-      Effect.flatMap(Schema.decodeUnknown(schema))
+export const decodeParamsUnknown =
+  <S extends Schema.Codec<any, any, any, any>, P extends NextBaseParams>(schema: S) => (params: P) =>
+    Effect.promise(() => params).pipe(
+      Effect.flatMap(Schema.decodeUnknownEffect(schema))
     )
 
 /**
  * @since 0.30.0
  * @category params
  */
-export const decodeParams = <T, P>(schema: Schema.Schema<T, P>) => (params: Promise<P>) =>
+export const decodeSearchParamsUnknown =
+  <S extends Schema.Codec<any, any, any, any>, P extends NextBaseParams>(schema: S) => (searchParams: P) =>
+    Effect.promise(() => searchParams).pipe(
+      Effect.flatMap(Schema.decodeUnknownEffect(schema))
+    )
+
+/**
+ * @since 0.30.0
+ * @category params
+ */
+export const decodeParams = <S extends Schema.Codec<any, any, any, any>>(schema: S) =>
+(
+  params: Promise<S["Encoded"]>
+) =>
   Effect.promise(() => params).pipe(
-    Effect.flatMap(Schema.decode(schema))
+    Effect.flatMap(Schema.decodeEffect(schema))
   )

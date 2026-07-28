@@ -16,10 +16,10 @@ Write your Next.js App Router pages, layouts, server components, routes, and act
 
 ### Getting Started
 
-1. Install `effect@3.20.0` or newer and the library in an existing Next.js 15+ application
+1. Install `effect@4` and the library in an existing Next.js 15+ application
 
 ```sh
-pnpm add @mcrovero/effect-nextjs effect@^3.20.0
+pnpm add @mcrovero/effect-nextjs effect@beta
 ```
 
 or create a new Next.js application first:
@@ -29,7 +29,7 @@ pnpx create-next-app@latest
 ```
 
 > [!IMPORTANT]
-> This library requires `effect >= 3.20.0`. Older Effect releases can lose Node.js `AsyncLocalStorage` request context under concurrent load.
+> This library requires `effect >= 4.0.0-beta.102` and is ESM-only, matching Effect v4. For the Effect v3 line, use `@mcrovero/effect-nextjs@0.32.x`.
 
 2. Define Next effect runtime
 
@@ -70,7 +70,7 @@ import { Layer, Schema } from "effect"
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 
-export class CurrentUser extends Context.Tag("CurrentUser")<CurrentUser, { id: string; name: string }>() {}
+export class CurrentUser extends Context.Service<CurrentUser, { id: string; name: string }>()("CurrentUser") {}
 
 // Middleware that provides CurrentUser and can fail with a string
 export class AuthMiddleware extends NextMiddleware.Tag<AuthMiddleware>()("AuthMiddleware", {
@@ -206,7 +206,7 @@ const HomePage = Effect.fn("HomePage")((props) =>
         Id: {params.id} Name: {searchParams.name}
       </div>
     )),
-    Effect.catchTag("ParseError", () => Effect.succeed(<div>Error decoding params</div>))
+    Effect.catch(() => Effect.succeed(<div>Error decoding params</div>))
   )
 )
 
@@ -223,7 +223,7 @@ import * as Effect from "effect/Effect"
 import { Layer, Schema } from "effect"
 import { Next, NextMiddleware } from "@mcrovero/effect-nextjs"
 
-export class CurrentUser extends Context.Tag("CurrentUser")<CurrentUser, { id: string; name: string }>() {}
+export class CurrentUser extends Context.Service<CurrentUser, { id: string; name: string }>()("CurrentUser") {}
 
 export class Wrapped extends NextMiddleware.Tag<Wrapped>()("Wrapped", {
   provides: CurrentUser,
@@ -251,23 +251,24 @@ const Page = Next.make("Home", AppLive).middleware(Wrapped)
 
 ### Stateful layers
 
-When using a stateful layer there is no clean way to dispose it safely on HMR in development. You should define the Next runtime globally using `globalValue` from `effect/GlobalValue`.
+When using a stateful layer there is no clean way to dispose it safely on HMR in development. You should memoize the Next runtime on `globalThis` so it survives module reloads.
 
 ```ts
 import { Next } from "@mcrovero/effect-nextjs"
-import { Effect, ManagedRuntime } from "effect"
-import { globalValue } from "effect/GlobalValue"
+import { Context, Effect, Layer, ManagedRuntime } from "effect"
 
-export class StatefulService extends Effect.Service<StatefulService>()("app/StatefulService", {
-  scoped: Effect.gen(function* () {
+export class StatefulService extends Context.Service<StatefulService, object>()("app/StatefulService", {
+  make: Effect.gen(function* () {
     yield* Effect.log("StatefulService scoped")
     yield* Effect.addFinalizer(() => Effect.log("StatefulService finalizer"))
     return {}
   })
 }) {}
 
-export const statefulRuntime = globalValue("BasePage", () => {
-  const managedRuntime = ManagedRuntime.make(StatefulService.Default)
+const statefulKey = Symbol.for("app/statefulRuntime")
+
+export const statefulRuntime = ((globalThis as any)[statefulKey] ??= (() => {
+  const managedRuntime = ManagedRuntime.make(Layer.effect(StatefulService, StatefulService.make))
   process.on("SIGINT", () => {
     managedRuntime.dispose()
   })
@@ -275,7 +276,7 @@ export const statefulRuntime = globalValue("BasePage", () => {
     managedRuntime.dispose()
   })
   return managedRuntime
-})
+})()) as ManagedRuntime.ManagedRuntime<StatefulService, never>
 ```
 
 Then you can use it directly using `Next.makeWithRuntime`.
@@ -288,7 +289,7 @@ Or you can extract the context you need from the stateful runtime and using it i
 This way you'll get HMR for the stateless layer and clean disposal of the stateful runtime.
 
 ```ts
-const EphemeralLayer = Layer.effectContext(statefulRuntime.runtimeEffect.pipe(Effect.map((runtime) => runtime.context)))
+const EphemeralLayer = Layer.effectContext(statefulRuntime.contextEffect)
 
 export const BasePage = Next.make("BasePage", EphemeralLayer)
 ```
@@ -312,7 +313,7 @@ const BlogPage = Effect.fn("BlogHandler")(function* (props: PageProps<"/blog/[sl
   )
 })
 
-export default Next.make("BlogPage", AppLive).build(BlØogPage)
+export default Next.make("BlogPage", AppLive).build(BlogPage)
 
 // Layout with parallel routes support
 const DashboardLayout = Effect.fn("DashboardLayout")(function* (props: LayoutProps<"/dashboard">) {
@@ -348,7 +349,7 @@ import { Effect, Layer, Option } from "effect"
 
 export const layerTracer = OtelTracer.layerGlobal.pipe(
   Layer.provide(
-    Layer.unwrapEffect(
+    Layer.unwrap(
       Effect.gen(function* () {
         const resource = yield* Effect.serviceOption(Resource.Resource)
         if (Option.isSome(resource)) {

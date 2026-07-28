@@ -14,6 +14,15 @@ Write your Next.js App Router pages, layouts, server components, routes, and act
 > [!WARNING]
 > This library is in early alpha and is not ready for production use.
 
+### Example app
+
+A complete Next.js application exercising every wrapper lives in [`examples/showcase`](examples/showcase). It covers pages, layouts, route handlers, all three middleware shapes, and each helper module, using Effect data structures throughout.
+
+```sh
+pnpm install && pnpm build
+pnpm --filter effect-nextjs-showcase dev
+```
+
 ### Getting Started
 
 1. Install `effect@4` and the library in an existing Next.js 15+ application

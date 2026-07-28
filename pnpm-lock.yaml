@@ -93,6 +93,37 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@22.18.10)(tsx@4.21.0)(yaml@2.9.0)
 
+  examples/showcase:
+    dependencies:
+      effect:
+        specifier: 4.0.0-beta.102
+        version: 4.0.0-beta.102
+      next:
+        specifier: 15.5.4
+        version: 15.5.4(@babel/core@7.28.6)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      react:
+        specifier: ^19.2.0
+        version: 19.2.0
+      react-dom:
+        specifier: ^19.2.0
+        version: 19.2.0(react@19.2.0)
+    devDependencies:
+      '@mcrovero/effect-nextjs':
+        specifier: link:../..
+        version: link:../..
+      '@types/node':
+        specifier: ^22.18.10
+        version: 22.18.10
+      '@types/react':
+        specifier: ^19.2.2
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.2.2
+        version: 19.2.3(@types/react@19.2.14)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
   fixtures/next-app:
     dependencies:
       effect:

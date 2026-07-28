@@ -45,6 +45,17 @@ jobs:
         uses: ./.github/actions/setup
       - run: pnpm lint
 
+  example:
+    name: Example app
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        uses: ./.github/actions/setup
+      - run: pnpm build
+      - run: pnpm --filter effect-nextjs-showcase build
+
   test:
     name: Test
     runs-on: ubuntu-latest

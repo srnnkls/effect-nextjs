@@ -27,7 +27,7 @@
     "build-esm": "tsc -b tsconfig.build.json",
     "build-annotate": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
     "check": "tsc -b tsconfig.json",
-    "lint": "eslint \"**/{src,test,example,scripts,dtslint}/**/*.{ts,mjs}\"",
+    "lint": "eslint \"**/{src,test,example,examples,scripts,dtslint}/**/*.{ts,tsx,mjs}\"",
     "lint-fix": "pnpm lint --fix",
     "test": "vitest",
     "test:next-integration": "pnpm build && vitest --config vitest.next.config.ts",

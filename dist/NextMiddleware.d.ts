@@ -1,0 +1,167 @@
+/**
+ * @since 0.5.0
+ */
+import * as Context from "effect/Context";
+import type * as Effect from "effect/Effect";
+import * as Schema from "effect/Schema";
+/**
+ * @since 0.5.0
+ * @category type ids
+ */
+export declare const TypeId: unique symbol;
+/**
+ * @since 0.5.0
+ * @category type ids
+ */
+export type TypeId = typeof TypeId;
+type MiddlewareOptions = {
+    props: unknown;
+};
+/**
+ * @since 0.5.0
+ * @category models
+ */
+export interface NextMiddleware<Provides, E, R = never> {
+    (options: MiddlewareOptions): Effect.Effect<Provides, E, R>;
+}
+/**
+ * @since 0.5.0
+ * @category models
+ */
+export interface NextMiddlewareWrap<Provides, Catches, R> {
+    (options: MiddlewareOptions & {
+        readonly next: Effect.Effect<any, Catches, Provides>;
+    }): Effect.Effect<any, never, R>;
+}
+/**
+ * @since 0.5.0
+ * @category models
+ */
+export type TagClass<Self, Name extends string, Options, R> = TagClass.Base<Self, Name, Options, TagClass.Wrap<Options> extends true ? NextMiddlewareWrap<TagClass.Provides<Options>, TagClass.CatchesValue<Options>, R> : NextMiddleware<TagClass.Service<Options>, TagClass.FailureService<Options>, R>>;
+/**
+ * @since 0.5.0
+ * @category models
+ */
+export declare namespace TagClass {
+    /**
+     * @since 0.5.0
+     * @category models
+     */
+    type Provides<Options> = Options extends {
+        readonly provides: Context.Key<any, any>;
+    } ? Context.Service.Identifier<Options["provides"]> : never;
+    /**
+     * @since 0.5.0
+     * @category models
+     */
+    type Service<Options> = Options extends {
+        readonly provides: Context.Key<any, any>;
+    } ? Context.Service.Shape<Options["provides"]> : void;
+    /**
+     * @since 0.5.0
+     * @category models
+     */
+    type FailureSchema<Options> = Options extends {
+        readonly failure: Schema.Top;
+    } ? Options["failure"] : typeof Schema.Never;
+    /**
+     * @since 0.5.0
+     * @category models
+     */
+    type Failure<Options> = Options extends {
+        readonly failure: Schema.Codec<infer _A, infer _I, infer _RD, infer _RE>;
+    } ? _A : never;
+    /**
+     * @since 0.5.0
+     * @category models
+     */
+    type FailureContext<Options> = FailureSchema<Options>["DecodingServices"];
+    /**
+     * @since 0.5.0
+     * @category models
+     */
+    type FailureService<Options> = Failure<Options>;
+    /**
+     * @since 0.5.0
+     * @category models
+     */
+    type Wrap<Options> = Options extends {
+        readonly wrap: true;
+    } ? true : false;
+    /**
+     * @since 0.5.0
+     * @category models
+     */
+    type CatchesSchema<Options> = Wrap<Options> extends true ? Options extends {
+        readonly catches: Schema.Top;
+    } ? Options["catches"] : typeof Schema.Never : typeof Schema.Never;
+    /**
+     * @since 0.5.0
+     * @category models
+     */
+    type CatchesValue<Options> = CatchesSchema<Options>["Type"];
+    /**
+     * @since 0.5.0
+     * @category models
+     */
+    type ReturnsSchema<Options> = Wrap<Options> extends true ? Options extends {
+        readonly returns: Schema.Top;
+    } ? Options["returns"] : typeof Schema.Never : typeof Schema.Never;
+    /**
+     * @since 0.5.0
+     * @category models
+     */
+    interface Base<Self, Name extends string, Options, Shape> extends Context.Service<Self, Shape> {
+        new (_: never): Context.ServiceClass.Shape<Name, Shape>;
+        readonly [TypeId]: TypeId;
+        readonly failure: FailureSchema<Options>;
+        readonly catches: CatchesSchema<Options>;
+        readonly provides: Options extends {
+            readonly provides: Context.Key<any, any>;
+        } ? Options["provides"] : undefined;
+        readonly wrap: Wrap<Options>;
+        readonly returns: ReturnsSchema<Options>;
+    }
+}
+/**
+ * @since 0.5.0
+ * @category models
+ */
+export interface TagClassAny extends Context.Service<any, any> {
+    readonly [TypeId]: TypeId;
+    readonly provides?: Context.Key<any, any> | undefined;
+    readonly failure: Schema.Top;
+    readonly catches: Schema.Top;
+    readonly wrap: boolean;
+    readonly returns: Schema.Top;
+}
+/**
+ * @since 0.5.0
+ * @category models
+ */
+export interface TagClassAnyWithProps extends Context.Service<any, NextMiddleware<any, any, any> | NextMiddlewareWrap<any, any, any>> {
+    readonly [TypeId]: TypeId;
+    readonly provides?: Context.Key<any, any> | undefined;
+    readonly failure: Schema.Top;
+    readonly catches: Schema.Top;
+    readonly wrap: boolean;
+    readonly returns: Schema.Top;
+}
+/**
+ * @since 0.5.0
+ * @category tags
+ */
+export declare const Tag: <Self>() => <const Name extends string, const Options extends ({
+    readonly wrap: true;
+    readonly failure?: Schema.Top;
+    readonly provides?: Context.Key<any, any>;
+    readonly catches?: Schema.Top;
+    readonly returns?: Schema.Top;
+} | {
+    readonly wrap?: false;
+    readonly failure?: Schema.Top;
+    readonly provides?: Context.Key<any, any>;
+    readonly catches?: undefined;
+})>(id: Name, options?: Options | undefined) => TagClass<Self, Name, Options, never>;
+export {};
+//# sourceMappingURL=NextMiddleware.d.ts.map

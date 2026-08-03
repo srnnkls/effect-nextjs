@@ -36,9 +36,7 @@ Then open <http://localhost:3000>.
 
 ## Layer naming and placement
 
-Layers follow the Effect v4 convention of `layer` rather than v3's `Live` or `Default`, with descriptive suffixes for variants — `layerAuth`, `layerTiming`, `layerApp`. Services defined with a `make` option expose it as a static, as `Clock.layer` does.
-
-Middleware layers are the exception: they are declared at module scope rather than as `static readonly layer` on the middleware class. A static makes the class type self-referential, and `.middleware(M)` then infers `M` as `TagClassAny` instead of the concrete class. Because `TagClassAny` declares `provides` as optional, the provided service silently disappears from the handler's requirements, and the page fails to compile with a confusing error pointing at the handler rather than the layer. Keeping middleware layers outside the class body avoids this.
+Layers follow the Effect v4 convention of `layer` rather than v3's `Live` or `Default`, with descriptive suffixes for variants. Every service and middleware exposes its primary layer as `static readonly layer` on the class, and `layerApp` merges them.
 
 ## Two behaviors worth copying
 

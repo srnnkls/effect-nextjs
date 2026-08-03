@@ -49,14 +49,17 @@ interface AnyWithProps {
  */
 type LayerSuccess<L> = L extends Layer.Layer<infer ROut, any, any> ? ROut : never
 
+type MiddlewareProvidedBy<M, L> = Context_.Service.Identifier<M> extends LayerSuccess<L> ? []
+  : [error: "middleware is not provided by this handler's layer"]
+
 /**
  * @since 0.5.0
  * @category models
  */
 export interface Next<
   in out Tag extends string,
-  out L extends Layer.Layer<any, any, any> | undefined,
-  out Middleware extends NextMiddleware.TagClassAny = never
+  in out L extends Layer.Layer<any, any, any> | undefined,
+  out Middleware = never
 > extends Pipeable {
   new(_: never): object
 
@@ -71,7 +74,8 @@ export interface Next<
    * the environment provided by `L`.
    */
   middleware<M extends NextMiddleware.TagClassAny>(
-    middleware: Context_.Service.Identifier<M> extends LayerSuccess<L> ? M : never
+    middleware: M,
+    ...check: MiddlewareProvidedBy<M, L>
   ): Next<Tag, L, Middleware | M>
 
   /**

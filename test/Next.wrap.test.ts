@@ -10,7 +10,7 @@ import * as NextMiddleware from "../src/NextMiddleware.js"
 describe("Next wrap middleware", () => {
   it.effect("can override return value", () =>
     Effect.gen(function*() {
-      class Dummy extends Context.Tag("Dummy")<Dummy, { id: string }>() {}
+      class Dummy extends Context.Service<Dummy, { id: string }>()("Dummy") {}
 
       class Wrap extends NextMiddleware.Tag<Wrap>()("Wrap", {
         wrap: true,
@@ -18,12 +18,12 @@ describe("Next wrap middleware", () => {
         returns: Schema.String
       }) {}
 
-      const WrapLive: Layer.Layer<Wrap> = Layer.succeed(
+      const layerWrap: Layer.Layer<Wrap> = Layer.succeed(
         Wrap,
         ({ next }) => Effect.as(next, "overridden")
       )
 
-      const app = Next.make("Base", Layer.mergeAll(Layer.succeed(Dummy, { id: "1" }), WrapLive))
+      const app = Next.make("Base", Layer.mergeAll(Layer.succeed(Dummy, { id: "1" }), layerWrap))
       const page = app.middleware(Wrap)
 
       const res = yield* Effect.promise(() => page.build(() => Effect.succeed("original" as const))())

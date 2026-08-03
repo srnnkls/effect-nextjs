@@ -14,7 +14,7 @@ describe("Middleware ordering", () => {
       class NonWrapped extends NextMiddleware.Tag<NonWrapped>()("NonWrapped") {}
 
       // Use Layer.succeed with TagClass.of to avoid type issues for tests
-      const WrappedLive: Layer.Layer<Wrapped> = Layer.succeed(
+      const layerWrapped: Layer.Layer<Wrapped> = Layer.succeed(
         Wrapped,
         Wrapped.of(({ next }) =>
           Effect.gen(function*() {
@@ -26,7 +26,7 @@ describe("Middleware ordering", () => {
         )
       )
 
-      const NonWrappedLive: Layer.Layer<NonWrapped> = Layer.succeed(
+      const layerNonWrapped: Layer.Layer<NonWrapped> = Layer.succeed(
         NonWrapped,
         NonWrapped.of(() =>
           Effect.sync(() => {
@@ -35,7 +35,7 @@ describe("Middleware ordering", () => {
         )
       )
 
-      const combined = Layer.mergeAll(WrappedLive, NonWrappedLive)
+      const combined = Layer.mergeAll(layerWrapped, layerNonWrapped)
       const page = Next.make("Base", combined)
         .middleware(Wrapped)
         .middleware(NonWrapped)
@@ -61,7 +61,7 @@ describe("Middleware ordering", () => {
       class Wrapped extends NextMiddleware.Tag<Wrapped>()("Wrapped", { wrap: true }) {}
       class NonWrapped extends NextMiddleware.Tag<NonWrapped>()("NonWrapped") {}
 
-      const WrappedLive: Layer.Layer<Wrapped> = Layer.succeed(
+      const layerWrapped: Layer.Layer<Wrapped> = Layer.succeed(
         Wrapped,
         Wrapped.of(({ next }) =>
           Effect.gen(function*() {
@@ -73,7 +73,7 @@ describe("Middleware ordering", () => {
         )
       )
 
-      const NonWrappedLive: Layer.Layer<NonWrapped> = Layer.succeed(
+      const layerNonWrapped: Layer.Layer<NonWrapped> = Layer.succeed(
         NonWrapped,
         NonWrapped.of(() =>
           Effect.sync(() => {
@@ -82,7 +82,7 @@ describe("Middleware ordering", () => {
         )
       )
 
-      const combined = Layer.mergeAll(WrappedLive, NonWrappedLive)
+      const combined = Layer.mergeAll(layerWrapped, layerNonWrapped)
       const layout = Next.make("Base", combined)
         .middleware(Wrapped)
         .middleware(NonWrapped)
@@ -109,7 +109,7 @@ describe("Middleware ordering", () => {
       class Wrapped extends NextMiddleware.Tag<Wrapped>()("Wrapped", { wrap: true }) {}
       class NonWrapped extends NextMiddleware.Tag<NonWrapped>()("NonWrapped") {}
 
-      const WrappedLive: Layer.Layer<Wrapped> = Layer.succeed(
+      const layerWrapped: Layer.Layer<Wrapped> = Layer.succeed(
         Wrapped,
         Wrapped.of(({ next }) =>
           Effect.gen(function*() {
@@ -121,7 +121,7 @@ describe("Middleware ordering", () => {
         )
       )
 
-      const NonWrappedLive: Layer.Layer<NonWrapped> = Layer.succeed(
+      const layerNonWrapped: Layer.Layer<NonWrapped> = Layer.succeed(
         NonWrapped,
         NonWrapped.of(() =>
           Effect.gen(function*() {
@@ -131,7 +131,7 @@ describe("Middleware ordering", () => {
         )
       )
 
-      const combined = Layer.mergeAll(WrappedLive, NonWrappedLive)
+      const combined = Layer.mergeAll(layerWrapped, layerNonWrapped)
       const action = Next.make("Base", combined)
         .middleware(Wrapped)
         .middleware(NonWrapped)
@@ -158,7 +158,7 @@ describe("Middleware ordering", () => {
       class Wrapped extends NextMiddleware.Tag<Wrapped>()("Wrapped", { wrap: true }) {}
       class NonWrapped extends NextMiddleware.Tag<NonWrapped>()("NonWrapped") {}
 
-      const WrappedLive: Layer.Layer<Wrapped> = Layer.succeed(
+      const layerWrapped: Layer.Layer<Wrapped> = Layer.succeed(
         Wrapped,
         Wrapped.of(({ next }) =>
           Effect.gen(function*() {
@@ -170,7 +170,7 @@ describe("Middleware ordering", () => {
         )
       )
 
-      const NonWrappedLive: Layer.Layer<NonWrapped> = Layer.succeed(
+      const layerNonWrapped: Layer.Layer<NonWrapped> = Layer.succeed(
         NonWrapped,
         NonWrapped.of(() =>
           Effect.sync(() => {
@@ -179,7 +179,7 @@ describe("Middleware ordering", () => {
         )
       )
 
-      const combined = Layer.mergeAll(WrappedLive, NonWrappedLive)
+      const combined = Layer.mergeAll(layerWrapped, layerNonWrapped)
       const component = Next.make("Base", combined)
         .middleware(Wrapped)
         .middleware(NonWrapped)

@@ -5,7 +5,7 @@ import { Next } from "src/index.js"
 import * as NextMiddleware from "../src/NextMiddleware.js"
 
 // A simple context tag for the current user
-export class CurrentUser extends Context.Tag("CurrentUser")<CurrentUser, { id: string; name: string }>() {}
+export class CurrentUser extends Context.Service<CurrentUser, { id: string; name: string }>()("CurrentUser") {}
 
 // Non-wrapped middleware: runs before and provides a service
 export class AuthMiddleware extends NextMiddleware.Tag<AuthMiddleware>()(
@@ -17,7 +17,7 @@ export class AuthMiddleware extends NextMiddleware.Tag<AuthMiddleware>()(
 ) {}
 
 // Implementation for non-wrapped middleware: compute value to provide
-const AuthLive = Layer.succeed(
+const layerAuth = Layer.succeed(
   AuthMiddleware,
   AuthMiddleware.of(() => Effect.succeed({ id: "123", name: "other" }))
 )
@@ -30,7 +30,7 @@ const Action = Effect.fn("Action")(function*(input: { test: string }) {
 })
 
 // The async here is important to satisfy Next.js's requirement for server actions
-export const action = Next.make("Base", AuthLive)
+export const action = Next.make("Base", layerAuth)
   .middleware(AuthMiddleware).build(
     Action
   )

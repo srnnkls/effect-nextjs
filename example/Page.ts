@@ -1,19 +1,19 @@
 import { Layer, Schema } from "effect"
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
-import { ParseError } from "effect/ParseResult"
+import { SchemaError } from "effect/SchemaError"
 import { decodeParamsUnknown } from "src/Params.js"
 import * as Next from "../src/Next.js"
 import * as NextMiddleware from "../src/NextMiddleware.js"
 
-export class CurrentUser extends Context.Tag("CurrentUser")<CurrentUser, { id: string; name: string }>() {}
+export class CurrentUser extends Context.Service<CurrentUser, { id: string; name: string }>()("CurrentUser") {}
 
 export class ProvideUser extends NextMiddleware.Tag<ProvideUser>()(
   "ProvideUser",
   { provides: CurrentUser, failure: Schema.String }
 ) {}
 
-const ProvideUserLive = Layer.succeed(
+const layerProvideUser = Layer.succeed(
   ProvideUser,
   () => Effect.succeed({ id: "u-1", name: "Alice" })
 )
@@ -21,22 +21,22 @@ const ProvideUserLive = Layer.succeed(
 export class CatchAll extends NextMiddleware.Tag<CatchAll>()(
   "CatchAll",
   {
-    catches: Schema.Union(Schema.String, Schema.instanceOf(ParseError)),
+    catches: Schema.Union([Schema.String, Schema.instanceOf(SchemaError)]),
     wrap: true,
     returns: Schema.Struct({ success: Schema.Literal(false), error: Schema.String })
   }
 ) {}
 
-const CatchAllLive = Layer.succeed(
+const layerCatchAll = Layer.succeed(
   CatchAll,
   CatchAll.of(({ next }) =>
     Effect.gen(function*() {
-      return yield* next.pipe(Effect.catchAll((e) => Effect.succeed({ error: e })))
+      return yield* next.pipe(Effect.catch((e) => Effect.succeed({ error: e })))
     })
   )
 )
 
-const app = Layer.mergeAll(CatchAllLive, ProvideUserLive)
+const app = Layer.mergeAll(layerCatchAll, layerProvideUser)
 
 const BasePage = Next.make("Home", app)
 

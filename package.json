@@ -10,39 +10,43 @@
     "url": "https://github.com/mcrovero/effect-nextjs"
   },
   "publishConfig": {
-    "access": "public",
-    "directory": "dist"
+    "access": "public"
+  },
+  "sideEffects": [],
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    "./package.json": "./package.json",
+    ".": "./dist/index.js",
+    "./*": "./dist/*.js",
+    "./internal/*": null
   },
   "scripts": {
-    "codegen": "build-utils prepare-v2",
-    "build": "pnpm build-esm && pnpm build-annotate && pnpm build-cjs && build-utils pack-v2",
+    "build": "pnpm build-esm && pnpm build-annotate",
     "build-esm": "tsc -b tsconfig.build.json",
-    "build-cjs": "babel build/esm --plugins @babel/transform-export-namespace-from --plugins @babel/transform-modules-commonjs --out-dir build/cjs --source-maps",
-    "build-annotate": "babel build/esm --plugins annotate-pure-calls --out-dir build/esm --source-maps",
+    "build-annotate": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
     "check": "tsc -b tsconfig.json",
-    "lint": "eslint \"**/{src,test,examples,scripts,dtslint}/**/*.{ts,mjs}\"",
+    "lint": "eslint \"**/{src,test,example,examples,scripts,dtslint}/**/*.{ts,tsx,mjs}\"",
     "lint-fix": "pnpm lint --fix",
     "test": "vitest",
     "test:next-integration": "pnpm build && vitest --config vitest.next.config.ts",
     "coverage": "vitest --coverage",
     "changeset-version": "changeset version",
-    "changeset-publish": "pnpm build && TEST_DIST= pnpm vitest && changeset publish"
+    "changeset-publish": "pnpm build && pnpm vitest run && changeset publish"
   },
   "peerDependencies": {
-    "effect": ">=3.20.0 <4",
+    "effect": "^4.0.0-beta.102",
     "next": "^15 || ^16"
   },
   "devDependencies": {
     "@babel/cli": "^7.28.6",
     "@babel/core": "^7.28.6",
-    "@babel/plugin-transform-export-namespace-from": "^7.27.1",
-    "@babel/plugin-transform-modules-commonjs": "^7.28.6",
     "@changesets/changelog-github": "^0.5.2",
     "@changesets/cli": "^2.29.8",
-    "@effect/build-utils": "^0.8.9",
     "@effect/eslint-plugin": "^0.3.2",
-    "@effect/language-service": "^0.72.0",
-    "@effect/vitest": "^0.27.0",
+    "@effect/language-service": "^0.87.1",
+    "@effect/vitest": "4.0.0-beta.102",
     "@eslint/compat": "^2.0.1",
     "@eslint/eslintrc": "^3.3.3",
     "@eslint/js": "^9.39.2",
@@ -50,7 +54,7 @@
     "@typescript-eslint/eslint-plugin": "^8.53.1",
     "@typescript-eslint/parser": "^8.53.1",
     "babel-plugin-annotate-pure-calls": "^0.4.0",
-    "effect": "^3.20.0",
+    "effect": "4.0.0-beta.102",
     "eslint": "^9.39.2",
     "eslint-import-resolver-typescript": "^4.4.4",
     "eslint-plugin-codegen": "^0.34.1",
@@ -60,18 +64,6 @@
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vitest": "^3.2.4"
-  },
-  "effect": {
-    "generateExports": {
-      "include": [
-        "**/*.ts"
-      ]
-    },
-    "generateIndex": {
-      "include": [
-        "**/*.ts"
-      ]
-    }
   },
   "pnpm": {
     "patchedDependencies": {

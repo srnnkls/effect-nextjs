@@ -12,19 +12,19 @@ describe("Middleware catches", () => {
       class Wrapped extends NextMiddleware.Tag<Wrapped>()("Wrapped", { wrap: true, catches: Schema.String }) {}
 
       // Use Layer.succeed with TagClass.of to avoid type issues for tests
-      const WrappedLive: Layer.Layer<Wrapped> = Layer.succeed(
+      const layerWrapped: Layer.Layer<Wrapped> = Layer.succeed(
         Wrapped,
         Wrapped.of(({ next }) =>
           Effect.gen(function*() {
             const result = yield* next.pipe(
-              Effect.catchAll((error) => Effect.succeed("Catched: " + error))
+              Effect.catch((error) => Effect.succeed("Catched: " + error))
             )
             return result
           })
         )
       )
 
-      const combined = Layer.mergeAll(WrappedLive)
+      const combined = Layer.mergeAll(layerWrapped)
       const page = Next.make("Base", combined)
         .middleware(Wrapped)
 

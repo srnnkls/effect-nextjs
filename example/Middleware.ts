@@ -6,7 +6,7 @@ import * as Next from "../src/Next.js"
 import * as NextMiddleware from "../src/NextMiddleware.js"
 
 // A simple context tag for the current user
-export class CurrentUser extends Context.Tag("CurrentUser")<CurrentUser, { id: string; name: string }>() {}
+export class CurrentUser extends Context.Service<CurrentUser, { id: string; name: string }>()("CurrentUser") {}
 
 // Wrapped middleware: can run before/after and provide a service
 export class WrappedMiddleware extends NextMiddleware.Tag<WrappedMiddleware>()(
@@ -28,7 +28,7 @@ export class NotWrappedMiddleware extends NextMiddleware.Tag<NotWrappedMiddlewar
 ) {}
 
 // Implementation for wrapped middleware: decide when to run next and inject value
-const _WrappedLive = Layer.succeed(
+const layerWrapped = Layer.succeed(
   WrappedMiddleware,
   WrappedMiddleware.of(({ next }) =>
     Effect.gen(function*() {
@@ -38,12 +38,12 @@ const _WrappedLive = Layer.succeed(
 )
 
 // Implementation for non-wrapped middleware: compute value to provide
-const _NotWrappedLive = Layer.succeed(
+const layerNotWrapped = Layer.succeed(
   NotWrappedMiddleware,
   NotWrappedMiddleware.of(() => Effect.succeed({ id: "123", name: "other" }))
 )
 
-const ProdLive = Layer.mergeAll(_WrappedLive, _NotWrappedLive)
+const layerApp = Layer.mergeAll(layerWrapped, layerNotWrapped)
 
 // In page.tsx
 
@@ -52,9 +52,9 @@ const Page = ({ params }: { params: Promise<{ id: string }> }) =>
     const user = yield* CurrentUser
     yield* Effect.fail("error")
     return { user, params }
-  }).pipe(Effect.catchAll((e) => Effect.succeed({ error: e })))
+  }).pipe(Effect.catch((e) => Effect.succeed({ error: e })))
 
-export default Next.make("Base", ProdLive)
+export default Next.make("Base", layerApp)
   .middleware(WrappedMiddleware)
   .middleware(NotWrappedMiddleware)
   .build(

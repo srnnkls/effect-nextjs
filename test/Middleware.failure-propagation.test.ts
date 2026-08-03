@@ -13,7 +13,7 @@ describe("Middleware failure propagation", () => {
         failure: Schema.String
       }) {}
 
-      const FailingLive: Layer.Layer<Failing> = Layer.succeed(
+      const layerFailing: Layer.Layer<Failing> = Layer.succeed(
         Failing,
         // Fail immediately in the middleware phase
         Failing.of(() => Effect.fail("mw-fail" as const))
@@ -25,12 +25,12 @@ describe("Middleware failure propagation", () => {
         catches: Schema.String
       }) {}
 
-      const CatcherLive: Layer.Layer<Catcher> = Layer.succeed(
+      const layerCatcher: Layer.Layer<Catcher> = Layer.succeed(
         Catcher,
-        Catcher.of(({ next }) => next.pipe(Effect.catchAll(() => Effect.succeed("recovered" as const))))
+        Catcher.of(({ next }) => next.pipe(Effect.catch(() => Effect.succeed("recovered" as const))))
       )
 
-      const app = Layer.mergeAll(FailingLive, CatcherLive)
+      const app = Layer.mergeAll(layerFailing, layerCatcher)
       const page = Next.make("FailurePropagation", app)
         .middleware(Catcher)
         .middleware(Failing)
@@ -45,23 +45,23 @@ describe("Middleware failure propagation", () => {
         failure: Schema.String
       }) {}
 
-      const FailingLive: Layer.Layer<Failing> = Layer.succeed(
+      const layerFailing: Layer.Layer<Failing> = Layer.succeed(
         Failing,
         Failing.of(() => Effect.fail("mw-fail" as const))
       )
 
-      const page = Next.make("FailureBubble", FailingLive)
+      const page = Next.make("FailureBubble", layerFailing)
         .middleware(Failing)
 
-      const either = yield* Effect.tryPromise({
+      const result = yield* Effect.tryPromise({
         try: () => page.build(() => Effect.succeed("ok" as const))(),
         catch: (e) => e as Error
-      }).pipe(Effect.either)
+      }).pipe(Effect.result)
 
-      if (either._tag === "Right") {
+      if (result._tag === "Success") {
         assert.fail("Expected failure from middleware, got success")
       } else {
-        assert.match(String(either.left), /mw-fail/)
+        assert.match(String(result.failure), /mw-fail/)
       }
     }))
 })

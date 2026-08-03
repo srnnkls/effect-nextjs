@@ -8,8 +8,8 @@ import * as Next from "../src/Next.js"
 import * as NextMiddleware from "../src/NextMiddleware.js"
 
 describe("Next", () => {
-  class CurrentUser extends Context.Tag("CurrentUser")<CurrentUser, { id: string; name: string }>() {}
-  class Other extends Context.Tag("Other")<Other, { id: string; name: string }>() {}
+  class CurrentUser extends Context.Service<CurrentUser, { id: string; name: string }>()("CurrentUser") {}
+  class Other extends Context.Service<Other, { id: string; name: string }>()("Other") {}
 
   class AuthMiddleware extends NextMiddleware.Tag<AuthMiddleware>()(
     "AuthMiddleware",
@@ -20,18 +20,18 @@ describe("Next", () => {
     { provides: Other, failure: Schema.String }
   ) {}
 
-  const AuthLive: Layer.Layer<AuthMiddleware> = Layer.succeed(
+  const layerAuth: Layer.Layer<AuthMiddleware> = Layer.succeed(
     AuthMiddleware,
     AuthMiddleware.of(() => Effect.succeed({ id: "123", name: "John Doe" }))
   )
-  const OtherLive: Layer.Layer<OtherMiddleware> = Layer.succeed(
+  const layerOther: Layer.Layer<OtherMiddleware> = Layer.succeed(
     OtherMiddleware,
     OtherMiddleware.of(() => Effect.succeed({ id: "456", name: "Jane Doe" }))
   )
 
   it.effect("runs handler with provided services and params", () =>
     Effect.gen(function*() {
-      const combined = Layer.mergeAll(AuthLive, OtherLive)
+      const combined = Layer.mergeAll(layerAuth, layerOther)
       const page = Next.make("Base", combined)
         .middleware(AuthMiddleware)
         .middleware(OtherMiddleware)
@@ -46,7 +46,7 @@ describe("Next", () => {
             const awaitedParams = yield* Effect.promise(() => params)
             const awaitedSearchParams = yield* Effect.promise(() => searchParams)
             return { user, other, params: awaitedParams, searchParams: awaitedSearchParams }
-          }).pipe(Effect.catchAll(() => Effect.succeed({ error: "error" })))
+          }).pipe(Effect.catch(() => Effect.succeed({ error: "error" })))
         )({ params: Promise.resolve({ id: "p1" }), searchParams: Promise.resolve({ q: "hello" }) })
       )
 

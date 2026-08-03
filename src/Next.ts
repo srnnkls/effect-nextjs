@@ -1,14 +1,13 @@
 /**
  * @since 0.5.0
  */
-import { Effect, Option } from "effect"
+import { Effect } from "effect"
 import * as Context_ from "effect/Context"
-import * as Layer from "effect/Layer"
+import type * as Layer from "effect/Layer"
 import * as ManagedRuntime from "effect/ManagedRuntime"
 import type { Pipeable } from "effect/Pipeable"
 import { pipeArguments } from "effect/Pipeable"
 import type * as Schema from "effect/Schema"
-import type * as AST from "effect/SchemaAST"
 import { executeWithRuntime } from "./internal/executor.js"
 import { createMiddlewareChain } from "./internal/middleware-chain.js"
 import type * as NextMiddleware from "./NextMiddleware.js"
@@ -50,14 +49,17 @@ interface AnyWithProps {
  */
 type LayerSuccess<L> = L extends Layer.Layer<infer ROut, any, any> ? ROut : never
 
+type MiddlewareProvidedBy<M, L> = Context_.Service.Identifier<M> extends LayerSuccess<L> ? []
+  : [error: "middleware is not provided by this handler's layer"]
+
 /**
  * @since 0.5.0
  * @category models
  */
 export interface Next<
   in out Tag extends string,
-  out L extends Layer.Layer<any, any, any> | undefined,
-  out Middleware extends NextMiddleware.TagClassAny = never
+  in out L extends Layer.Layer<any, any, any> | undefined,
+  out Middleware = never
 > extends Pipeable {
   new(_: never): object
 
@@ -66,15 +68,14 @@ export interface Next<
   readonly key: string
   readonly middlewares: ReadonlyArray<Middleware>
   readonly runtime?: ManagedRuntime.ManagedRuntime<any, any>
-  readonly paramsSchema?: AnySchema
-  readonly searchParamsSchema?: AnySchema
 
   /**
    * Adds a middleware tag to this handler. The middleware must be satisfied by
    * the environment provided by `L`.
    */
   middleware<M extends NextMiddleware.TagClassAny>(
-    middleware: Context_.Tag.Identifier<M> extends LayerSuccess<L> ? M : never
+    middleware: M,
+    ...check: MiddlewareProvidedBy<M, L>
   ): Next<Tag, L, Middleware | M>
 
   /**
@@ -135,7 +136,7 @@ const Proto = {
           const tags = middlewares
           handlerEffect = createMiddlewareChain(
             tags,
-            (tag) => Context_.unsafeGet(context, tag),
+            (tag) => Context_.getUnsafe(context, tag),
             handlerEffect,
             { props: args }
           )
@@ -158,8 +159,6 @@ const makeProto = <
   readonly _tag: Tag
   readonly runtime?: ManagedRuntime.ManagedRuntime<any, any>
   readonly middlewares: ReadonlyArray<Middleware>
-  readonly paramsSchema?: AnySchema
-  readonly searchParamsSchema?: AnySchema
 }): Next<Tag, L, Middleware> => {
   function Next() {}
   Object.setPrototypeOf(Next, Proto)
@@ -180,10 +179,7 @@ export function make<
   tag: Tag,
   layer: Layer.Layer<R, E, never>
 ): Next<Tag, Layer.Layer<R, E, never>> {
-  const runtime = ManagedRuntime.make(
-    // We disable the unhandled error log level to clutter the console with 404, redirect, notFound, etc.
-    Layer.mergeAll(layer, Layer.setUnhandledErrorLogLevel(Option.none()))
-  )
+  const runtime = ManagedRuntime.make(layer)
 
   return makeProto({
     _tag: tag as any,
@@ -221,7 +217,7 @@ type ExtractProvides<R extends Any> = R extends Next<
   infer _Middleware
 > ?
     | LayerSuccess<_Layer>
-    | (_Middleware extends { readonly provides: Context_.Tag<infer _I, any> } ? _I : never)
+    | (_Middleware extends { readonly provides: Context_.Key<infer _I, any> } ? _I : never)
   : never
 
 /**
@@ -238,17 +234,8 @@ type BuildHandler<P extends Any, A extends Array<any>, O> = P extends
  * `wrap` protocol. When no wrapper is present, yields `never`.
  */
 type WrappedReturns<M> = M extends { readonly wrap: true }
-  ? Schema.Schema.Type<M extends { readonly returns: infer S } ? S : typeof Schema.Never>
+  ? (M extends { readonly returns: infer S extends Schema.Top } ? S["Type"] : never)
   : never
 
 /** Extracts the union of error types that middleware can catch. */
-type CatchesFromMiddleware<M> = M extends { readonly catches: Schema.Schema<infer A, any, any> } ? A : never
-
-interface AnySchema extends Pipeable {
-  readonly [Schema.TypeId]: any
-  readonly Type: any
-  readonly Encoded: any
-  readonly Context: any
-  readonly make?: (params: any, ...rest: ReadonlyArray<any>) => any
-  readonly ast: AST.AST
-}
+type CatchesFromMiddleware<M> = M extends { readonly catches: infer S extends Schema.Top } ? S["Type"] : never

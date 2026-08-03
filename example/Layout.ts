@@ -1,18 +1,18 @@
 import { Layer, Schema } from "effect"
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
-import { ParseError } from "effect/ParseResult"
+import { SchemaError } from "effect/SchemaError"
 import * as Next from "../src/Next.js"
 import * as NextMiddleware from "../src/NextMiddleware.js"
 
-export class Theme extends Context.Tag("Theme")<Theme, { mode: "light" | "dark" }>() {}
+export class Theme extends Context.Service<Theme, { mode: "light" | "dark" }>()("Theme") {}
 
 export class ThemeMiddleware extends NextMiddleware.Tag<ThemeMiddleware>()(
   "ThemeMiddleware",
   { provides: Theme, failure: Schema.String }
 ) {}
 
-const ThemeLive = Layer.succeed(
+const layerTheme = Layer.succeed(
   ThemeMiddleware,
   ThemeMiddleware.of(() => Effect.succeed({ mode: "dark" }))
 )
@@ -20,22 +20,22 @@ const ThemeLive = Layer.succeed(
 export class CatchAll extends NextMiddleware.Tag<CatchAll>()(
   "CatchAll",
   {
-    catches: Schema.Union(Schema.String, Schema.instanceOf(ParseError)),
+    catches: Schema.Union([Schema.String, Schema.instanceOf(SchemaError)]),
     wrap: true,
     returns: Schema.Struct({ success: Schema.Literal(false), error: Schema.String })
   }
 ) {}
 
-const CatchAllLive = Layer.succeed(
+const layerCatchAll = Layer.succeed(
   CatchAll,
   CatchAll.of(({ next }) =>
     Effect.gen(function*() {
-      return yield* next.pipe(Effect.catchAll((e) => Effect.succeed({ error: e })))
+      return yield* next.pipe(Effect.catch((e) => Effect.succeed({ error: e })))
     })
   )
 )
 
-const app = Layer.mergeAll(CatchAllLive, ThemeLive)
+const app = Layer.mergeAll(layerCatchAll, layerTheme)
 
 const BaseLayout = Next.make("Root", app)
   .middleware(ThemeMiddleware)

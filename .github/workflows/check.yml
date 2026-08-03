@@ -23,9 +23,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install dependencies
         uses: ./.github/actions/setup
-      - run: pnpm codegen
-      - name: Check source state
-        run: git add src && git diff-index --cached HEAD --exit-code src
+      - run: pnpm build
 
   types:
     name: Types
@@ -46,6 +44,17 @@ jobs:
       - name: Install dependencies
         uses: ./.github/actions/setup
       - run: pnpm lint
+
+  example:
+    name: Example app
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        uses: ./.github/actions/setup
+      - run: pnpm build
+      - run: pnpm --filter effect-nextjs-showcase build
 
   test:
     name: Test
